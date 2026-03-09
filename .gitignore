@@ -1,0 +1,52 @@
+# Node / pnpm / general
+node_modules/
+.pnp/
+.pnp.js
+.pnp.cjs
+pnpm-lock.yaml
+dist/
+build/
+coverage/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.idea/
+.vscode/
+
+# Environment files (keep .env.example)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Next.js
+.next/
+out/
+next-env.d.ts
+
+# TypeScript
+*.tsbuildinfo
+
+# Tests / tooling
+.nyc_output/
+jest-cache/
+jest-test-results.json
+
+# Foundry (Solidity)
+cache/
+out/
+broadcast/
+libs/
+
+# Contracts package specific
+packages/contracts/lib/
+packages/contracts/out/
+packages/contracts/cache/
+packages/contracts/broadcast/
+
