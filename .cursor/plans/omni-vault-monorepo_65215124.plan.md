@@ -10,19 +10,19 @@ todos:
     status: completed
   - id: implement-contracts
     content: 在 contracts 包中实现 MockUSDC、IYieldStrategy、MockYieldStrategy、OmniVault、OrderBook 以及相应 Foundry 测试与部署脚本。
-    status: in_progress
+    status: completed
   - id: init-frontend-backend
     content: 在 frontend 包中初始化 Next.js 14 App Router + Tailwind + Wagmi/Viem/React Query 的基础应用结构。
-    status: pending
+    status: completed
   - id: implement-gasless-backend
     content: 实现 /api/faucet 与 /api/orders 的 Upstash 限流、Gasless Relayer 与 EIP-712 签名验证逻辑。
-    status: pending
+    status: completed
   - id: implement-advanced-hooks
     content: 实现 usePermitSignature 与 useLiveVaultBalance 等高阶 React Hooks 并接入 wagmi/viem。
-    status: pending
+    status: completed
   - id: build-trading-terminal-ui
     content: 使用 align-ui + framer-motion 构建深色 DeFi 交易终端，包括资产栏、限价单表单和状态栏。
-    status: pending
+    status: in_progress
   - id: write-readme
     content: 撰写包含 Mermaid 架构图、工程亮点、Quick Start 和 Security 的专业 README.md。
     status: pending

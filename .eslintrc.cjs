@@ -15,14 +15,13 @@ module.exports = {
     node: true,
     es2022: true
   },
-  plugins: ["@typescript-eslint", "react", "react-hooks", "jsx-a11y"],
+  plugins: ["@typescript-eslint", "react", "react-hooks", "jsx-a11y", "import"],
   extends: [
     "eslint:recommended",
     "plugin:@typescript-eslint/recommended",
     "plugin:react/recommended",
     "plugin:react-hooks/recommended",
     "plugin:jsx-a11y/recommended",
-    "next/core-web-vitals",
     "prettier"
   ],
   settings: {
