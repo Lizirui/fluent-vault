@@ -35,23 +35,8 @@ module.exports = {
       "warn",
       { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }
     ],
-    "import/order": [
-      "warn",
-      {
-        groups: [
-          "builtin",
-          "external",
-          "internal",
-          "parent",
-          "sibling",
-          "index",
-          "object",
-          "type"
-        ],
-        "newlines-between": "always",
-        alphabetize: { order: "asc", caseInsensitive: true }
-      }
-    ]
+    // 关闭 import/order，避免仅保存文件就自动重排 import
+    "import/order": "off"
   },
   ignorePatterns: [
     "node_modules/",

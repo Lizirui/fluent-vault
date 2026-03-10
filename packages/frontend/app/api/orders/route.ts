@@ -76,9 +76,30 @@ export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => null);
 
-    const order: Order | undefined = body?.order;
+    const rawOrder = body?.order as any;
     const orderSignature: Hex | undefined = body?.orderSignature;
-    const permit: PermitPayload | undefined = body?.permit;
+    const rawPermit = body?.permit as any;
+
+    const order: Order | undefined = rawOrder && {
+      maker: rawOrder.maker as Address,
+      sellToken: rawOrder.sellToken as Address,
+      buyToken: rawOrder.buyToken as Address,
+      sellAmount: BigInt(rawOrder.sellAmount),
+      buyAmount: BigInt(rawOrder.buyAmount),
+      price: BigInt(rawOrder.price),
+      expiry: BigInt(rawOrder.expiry),
+      nonce: BigInt(rawOrder.nonce),
+      vault: rawOrder.vault as Address,
+    };
+
+    const permit: PermitPayload | undefined = rawPermit && {
+      signature: rawPermit.signature as Hex,
+      v: rawPermit.v as number,
+      r: rawPermit.r as Hex,
+      s: rawPermit.s as Hex,
+      nonce: BigInt(rawPermit.nonce),
+      deadline: BigInt(rawPermit.deadline),
+    };
 
     if (!order || !orderSignature || !permit) {
       return NextResponse.json(

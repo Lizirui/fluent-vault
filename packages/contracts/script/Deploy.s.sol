@@ -22,11 +22,13 @@ import {OrderBook} from "../src/OrderBook.sol";
 contract DeployFluentVault is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
+        address deployer = vm.addr(deployerPrivateKey);
 
         // 开始广播交易，后续 new 合约的操作都会通过该私钥真正发往链上。
         vm.startBroadcast(deployerPrivateKey);
 
-        MockUSDC mockUsdc = new MockUSDC(msg.sender);
+        // 使用真实 EOA 地址作为 MockUSDC 的 owner，而不是脚本合约地址
+        MockUSDC mockUsdc = new MockUSDC(deployer);
         MockYieldStrategy strategy = new MockYieldStrategy();
         FluentVault vault = new FluentVault(mockUsdc, strategy);
         OrderBook orderBook = new OrderBook();
@@ -34,10 +36,11 @@ contract DeployFluentVault is Script {
         // 结束广播，避免后续无关操作继续消耗 Gas。
         vm.stopBroadcast();
 
-        console2.log("MockUSDC:", address(mockUsdc));
-        console2.log("MockYieldStrategy:", address(strategy));
-        console2.log("FluentVault:", address(vault));
-        console2.log("OrderBook:", address(orderBook));
+        console2.log("=== FluentVault deployment summary ===");
+        console2.log("MOCK_USDC=%s", address(mockUsdc));
+        console2.log("MOCK_YIELD_STRATEGY=%s", address(strategy));
+        console2.log("FLUENT_VAULT=%s", address(vault));
+        console2.log("ORDER_BOOK=%s", address(orderBook));
     }
 }
 

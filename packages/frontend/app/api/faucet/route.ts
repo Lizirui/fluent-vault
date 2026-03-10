@@ -12,7 +12,7 @@
  */
 
 import { NextResponse } from "next/server";
-import { Address, Hex, createWalletClient, http, isAddress } from "viem";
+import { Address, Hex, createWalletClient, http, isAddress, type Chain } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { sepolia } from "viem/chains";
 
@@ -88,9 +88,27 @@ export async function POST(request: Request) {
     // 使用 viem 基于私钥创建 WalletClient，用于发送 mint 交易。
     const account = privateKeyToAccount(privateKey);
 
+    // 根据当前环境选择链配置：
+    // - 本地开发：NEXT_PUBLIC_CHAIN_ID=31337，对应 anvil 本地链
+    // - 线上 / 测试网：使用 viem 预置的 sepolia 配置
+    const envChainId = Number(process.env.NEXT_PUBLIC_CHAIN_ID ?? sepolia.id);
+
+    const chain: Chain =
+      envChainId === 31337
+        ? {
+            id: 31337,
+            name: "Anvil Local",
+            nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+            rpcUrls: {
+              default: { http: [rpcUrl] },
+              public: { http: [rpcUrl] }
+            }
+          }
+        : sepolia;
+
     const walletClient = createWalletClient({
       account,
-      chain: sepolia,
+      chain,
       transport: http(rpcUrl)
     });
 

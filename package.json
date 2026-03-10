@@ -4,11 +4,13 @@
   "version": "0.1.0",
   "description": "FluentVault – Web3 full-stack monorepo with Foundry contracts and Next.js 14 frontend.",
   "scripts": {
-    "dev:contracts": "cd packages/contracts && forge test -w",
-    "test:contracts": "cd packages/contracts && forge test",
-    "dev:frontend": "cd packages/frontend && next dev",
-    "build:frontend": "cd packages/frontend && next build",
-    "lint": "cd packages/frontend && next lint"
+  "dev:contracts": "cd packages/contracts && forge test -w",
+  "test:contracts": "cd packages/contracts && forge test",
+  "dev:frontend": "pnpm --filter fluent-vault-frontend dev",
+  "build:frontend": "pnpm --filter fluent-vault-frontend build",
+  "lint": "pnpm --filter fluent-vault-frontend lint",
+  "deploy:local": "bash ./scripts/deploy-local.sh",
+  "deploy:sepolia": "bash ./scripts/deploy-sepolia.sh"
   },
   "devDependencies": {
     "@types/node": "^22.10.1",

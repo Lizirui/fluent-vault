@@ -12,7 +12,7 @@ import "./globals.css";
 // Next.js App Router 使用的页面级元数据配置
 export const metadata: Metadata = {
   title: "FluentVault – DeFi Intent Trading Terminal",
-  description: "FluentVault: ERC-4626 yield vault with gasless intent trading built on Sepolia."
+  description: "FluentVault: ERC-4626 yield vault with gasless intent trading built on Sepolia.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -25,4 +25,3 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     </html>
   );
 }
-

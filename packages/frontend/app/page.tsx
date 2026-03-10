@@ -16,6 +16,10 @@ import { useAccount, useBalance, useChainId, useSwitchChain, useWalletClient } f
 import { useLiveVaultBalance } from "../hooks/useLiveVaultBalance";
 import { usePermitSignature } from "../hooks/usePermitSignature";
 import { useWatchVaultEvents } from "../hooks/useWatchVaultEvents";
+import { HeaderSection } from "./components/HeaderSection";
+import { AssetsPanel } from "./components/AssetsPanel";
+import { OrderSection } from "./components/OrderSection";
+import { RightPanel } from "./components/RightPanel";
 
 type TechStep = "idle" | "sign_eip712" | "permit" | "vault_deposit" | "gasless_order";
 
@@ -35,39 +39,44 @@ export default function HomePage() {
   const [techStep, setTechStep] = useState<TechStep>("idle");
 
   const targetChainId = Number(process.env.NEXT_PUBLIC_CHAIN_ID ?? sepolia.id);
-  const onWrongNetwork = isConnected && chainId !== targetChainId;
+  // 只要当前链 ID 与目标链不同，就认为在“错误网络”上。
+  const onWrongNetwork = chainId !== targetChainId;
 
-  const {
-    data: balanceData
-  } = useBalance({
+  const { data: balanceData } = useBalance({
     address,
     token: MOCK_USDC_ADDRESS,
     query: {
-      enabled: Boolean(address && MOCK_USDC_ADDRESS)
-    }
+      enabled: Boolean(address && MOCK_USDC_ADDRESS),
+    },
   });
 
   const { displayBalance } = useLiveVaultBalance({
     vaultAddress: VAULT_ADDRESS as Address,
-    assetDecimals: 6
+    assetDecimals: 6,
   });
 
   const eventsState = useWatchVaultEvents({
     vaultAddress: VAULT_ADDRESS as Address,
-    orderBookAddress: ORDER_BOOK_ADDRESS as Address
+    orderBookAddress: ORDER_BOOK_ADDRESS as Address,
   });
 
   const recentOrders = useMemo(
     () => eventsState.orderEvents.slice(-5).reverse(),
-    [eventsState.orderEvents]
+    [eventsState.orderEvents],
   );
 
-  const { signPermit, isSigning, error: permitError } = usePermitSignature({
+  const walletBalance = balanceData ? balanceData.formatted : "0.00";
+
+  const {
+    signPermit,
+    isSigning,
+    error: permitError,
+  } = usePermitSignature({
     tokenAddress: MOCK_USDC_ADDRESS as Address,
     spender: ORDER_BOOK_ADDRESS as Address,
     value: BigInt(Number(amount || "0") * 10 ** 6),
     deadline: BigInt(Math.floor(Date.now() / 1000) + 60 * 60),
-    chainId: BigInt(targetChainId)
+    chainId: BigInt(targetChainId),
   });
 
   async function handleSwitchNetwork() {
@@ -89,7 +98,7 @@ export default function HomePage() {
       const res = await fetch("/api/faucet", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ address })
+        body: JSON.stringify({ address }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -155,7 +164,7 @@ export default function HomePage() {
         price: priceBig,
         expiry: BigInt(Math.floor(Date.now() / 1000) + 60 * 60),
         nonce: BigInt(Date.now()),
-        vault: VAULT_ADDRESS
+        vault: VAULT_ADDRESS,
       };
 
       // 构造与后端 / 合约一致的 EIP-712 Domain / Types，用于订单签名。
@@ -163,7 +172,7 @@ export default function HomePage() {
         name: "FluentVaultOrderBook",
         version: "1",
         chainId: BigInt(targetChainId),
-        verifyingContract: ORDER_BOOK_ADDRESS
+        verifyingContract: ORDER_BOOK_ADDRESS,
       };
 
       const types: TypedData = {
@@ -176,8 +185,8 @@ export default function HomePage() {
           { name: "price", type: "uint256" },
           { name: "expiry", type: "uint256" },
           { name: "nonce", type: "uint256" },
-          { name: "vault", type: "address" }
-        ]
+          { name: "vault", type: "address" },
+        ],
       };
 
       // 使用钱包对 Order 数据进行 EIP-712 签名。
@@ -185,17 +194,34 @@ export default function HomePage() {
         domain,
         types,
         primaryType: "Order",
-        message: orderPayload
+        message: orderPayload,
       });
+
+      // 为了通过 JSON.stringify，需要把 bigint 字段转换为字符串再发送给后端，
+      // 后端会在 /api/orders 中再将这些字符串转换回 bigint。
+      const orderForJson = {
+        ...orderPayload,
+        sellAmount: sellAmount.toString(),
+        buyAmount: sellAmount.toString(),
+        price: priceBig.toString(),
+        expiry: orderPayload.expiry.toString(),
+        nonce: orderPayload.nonce.toString(),
+      };
+
+      const permitForJson = {
+        ...permit,
+        nonce: permit.nonce.toString(),
+        deadline: permit.deadline.toString(),
+      };
 
       const res = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          order: orderPayload,
+          order: orderForJson,
           orderSignature,
-          permit
-        })
+          permit: permitForJson,
+        }),
       });
 
       const data = await res.json();
@@ -214,186 +240,34 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen flex flex-col bg-slate-950 text-slate-50">
-      {/* 顶部导航栏 */}
-      <header className="border-b border-slate-800 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-lg bg-sky-500/20 border border-sky-500/50 flex items-center justify-center text-sky-300 text-xl font-bold">
-            F
-          </div>
-          <div>
-            <div className="text-sm font-semibold">FluentVault Protocol</div>
-            <div className="text-xs text-slate-400">
-              Senior Web3 Engineer · DeFi Intent Trading Terminal
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          {onWrongNetwork && (
-            <button
-              onClick={handleSwitchNetwork}
-              className="px-3 py-1.5 rounded-md bg-red-600 text-xs font-medium hover:bg-red-500"
-            >
-              Switch to Sepolia Network
-            </button>
-          )}
-          <button
-            onClick={handleFaucet}
-            className="px-3 py-1.5 rounded-md bg-sky-500 text-xs font-medium hover:bg-sky-400"
-          >
-            Get Test Tokens (Faucet)
-          </button>
-        </div>
-      </header>
+      <HeaderSection
+        onWrongNetwork={onWrongNetwork}
+        onSwitchNetwork={handleSwitchNetwork}
+        onFaucet={handleFaucet}
+      />
 
-      {/* 主体三栏布局 */}
       <section className="flex-1 grid grid-cols-1 xl:grid-cols-[340px_minmax(0,1.2fr)_340px] gap-4 px-6 py-4">
-        {/* 左侧：资产与收益 Dashboard */}
-        <aside className="space-y-4">
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
-            <div className="text-xs font-medium text-slate-400 mb-1">
-              My Assets &amp; Yield Dashboard
-            </div>
-            <div className="flex items-baseline justify-between">
-              <div>
-                <div className="text-[11px] text-slate-500">Wallet mUSDC</div>
-                <div className="text-xl font-semibold tabular-nums">
-                  {balanceData ? balanceData.formatted : "0.00"}
-                </div>
-              </div>
-              <div>
-                <div className="text-[11px] text-slate-500">Vault Estimated Balance</div>
-                <div className="text-xl font-semibold tabular-nums">{displayBalance}</div>
-              </div>
-            </div>
-          </div>
-        </aside>
+        <AssetsPanel walletBalance={walletBalance} displayBalance={displayBalance} />
 
-        {/* 中间：下单区域 */}
-        <section className="space-y-4">
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-xs font-medium text-slate-400">
-                  Intent Trading Terminal
-                </div>
-                <div className="text-base font-semibold">Place Limit Order with Yield</div>
-              </div>
-            </div>
+        <OrderSection
+          amount={amount}
+          price={price}
+          enableGasless={enableGasless}
+          isConnected={isConnected}
+          onWrongNetwork={onWrongNetwork}
+          isSigning={isSigning}
+          onChangeAmount={setAmount}
+          onChangePrice={setPrice}
+          onToggleGasless={() => setEnableGasless((v) => !v)}
+          onPlaceOrder={handlePlaceOrder}
+        />
 
-            <div className="space-y-3">
-              <label className="text-xs text-slate-400 flex flex-col gap-1">
-                下单数量（mUSDC）
-                <input
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  className="w-full rounded-md bg-slate-900 border border-slate-700 px-3 py-1.5 text-sm outline-none focus:border-sky-500"
-                />
-              </label>
-
-              <label className="text-xs text-slate-400 flex flex-col gap-1">
-                目标价格（示意字段）
-                <input
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  className="w-full rounded-md bg-slate-900 border border-slate-700 px-3 py-1.5 text-sm outline-none focus:border-sky-500"
-                />
-              </label>
-
-              <div className="flex items-center justify-between text-xs text-slate-300 mt-2">
-                <span>Enable Gasless Permit</span>
-                <button
-                  type="button"
-                  onClick={() => setEnableGasless((v) => !v)}
-                  aria-pressed={enableGasless}
-                  className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                    enableGasless ? "bg-sky-500" : "bg-slate-600"
-                  }`}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      enableGasless ? "translate-x-4" : "translate-x-1"
-                    }`}
-                  />
-                </button>
-              </div>
-
-              <button
-                type="button"
-                onClick={handlePlaceOrder}
-                disabled={!isConnected || onWrongNetwork || isSigning}
-                className="mt-4 w-full rounded-md bg-sky-500 py-2 text-sm font-medium hover:bg-sky-400 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {enableGasless ? "Sign & Place Gasless Order" : "Place On-chain Order"}
-              </button>
-            </div>
-          </div>
-        </section>
-
-        {/* 右侧：订单列表 + 技术讲解浮窗 */}
-        <aside className="space-y-4">
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
-            <div className="text-xs font-medium text-slate-400 mb-2">Recent OrderFills</div>
-            <div className="space-y-2 text-xs">
-              {recentOrders.length === 0 && (
-                <div className="text-slate-500">暂时还没有成交事件，可稍后再试。</div>
-              )}
-              {recentOrders.map((log, idx) => (
-                <div
-                  key={`${log.transactionHash}-${idx}`}
-                  className="flex flex-col rounded-md bg-slate-900/60 border border-slate-800 px-2 py-1.5"
-                >
-                  <span className="text-[11px] text-slate-400">
-                    Tx: {(log.transactionHash as string | undefined)?.slice(0, 18) ?? "N/A"}...
-                  </span>
-                  <span className="text-[11px] text-slate-500">
-                    Block #{String(log.blockNumber ?? "")}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* 技术讲解浮窗：按当前 techStep 切换文案，支持点击关闭 / 切换 */}
-          {techStep !== "idle" && (
-            <div className="relative rounded-2xl border border-slate-800 bg-slate-900/60 p-4 text-xs leading-relaxed text-slate-200">
-              <button
-                type="button"
-                onClick={() => setTechStep("idle")}
-                className="absolute right-2 top-2 text-slate-500 hover:text-slate-300 text-xs"
-              >
-                ×
-              </button>
-              {techStep === "permit" && (
-                <p>
-                  你刚刚触发的是 <strong>EIP-2612 Permit 授权签名</strong>。相比传统 Approve
-                  交易，Permit 通过链下签名完成授权，不需要额外发送一笔上链交易，从而节省 Gas。
-                </p>
-              )}
-              {techStep === "sign_eip712" && (
-                <p>
-                  接下来是 <strong>EIP-712 订单签名</strong>。通过对结构化数据签名，Relayer
-                  可以在链下安全地聚合、排序和过滤用户意图，再在价格合适时触发链上结算。
-                </p>
-              )}
-              {techStep === "vault_deposit" && (
-                <p>
-                  Faucet 发放的 MockUSDC 可以存入 <strong>FluentVault（ERC-4626 标准金库）</strong>
-                  。Vault 会把资产转给收益策略，由 MockYieldStrategy
-                  按区块时间模拟约 10% 年化收益。
-                </p>
-              )}
-              {techStep === "gasless_order" && (
-                <p>
-                  当前订单以 <strong>Gasless Intent</strong> 的方式提交到后端 Relayer。Relayer
-                  在看到合适价格时，会携带你的订单签名与 Permit 授权，一次性调用
-                  OrderBook.executeOrder 完成扣款与入金库。
-                </p>
-              )}
-            </div>
-          )}
-        </aside>
+        <RightPanel
+          recentOrders={recentOrders}
+          techStep={techStep}
+          onResetTechStep={() => setTechStep("idle")}
+        />
       </section>
     </main>
   );
 }
-

@@ -18,9 +18,6 @@
     "jsx": "preserve",
     "baseUrl": ".",
     "paths": {
-      "@ui/*": [
-        "components/*"
-      ],
       "@lib/*": [
         "lib/*"
       ]
