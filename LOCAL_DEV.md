@@ -55,13 +55,11 @@ pnpm deploy:local -- 0x你从anvil控制台复制的私钥
    ```
 
 2. 解析部署日志中标准化输出的地址：
-
    - `MOCK_USDC=0x...`
    - `FLUENT_VAULT=0x...`
    - `ORDER_BOOK=0x...`
 
 3. 自动生成/覆盖两份环境文件，并区分后端与前端配置：
-
    - 根目录 `.env.local`（后端 / 脚本使用）：
      - `SEPOLIA_RPC_URL=http://127.0.0.1:8545`（名称沿用，值指向本地 RPC）
      - `MOCK_USDC_ADDRESS` / `FLUENT_VAULT_ADDRESS` / `ORDER_BOOK_ADDRESS`（本地部署地址，用于脚本和 API）
@@ -157,13 +155,11 @@ pnpm deploy:sepolia
    ```
 
 3. 解析部署日志中的：
-
    - `MOCK_USDC=0x...`
    - `FLUENT_VAULT=0x...`
    - `ORDER_BOOK=0x...`
 
 4. 在保留其他字段的前提下，更新 `.env` 中：
-
    - `MOCK_USDC_ADDRESS` / `FLUENT_VAULT_ADDRESS` / `ORDER_BOOK_ADDRESS`
    - `NEXT_PUBLIC_MOCK_USDC_ADDRESS=${MOCK_USDC_ADDRESS}`
    - `NEXT_PUBLIC_VAULT_ADDRESS=${FLUENT_VAULT_ADDRESS}`
@@ -194,12 +190,12 @@ pnpm deploy:sepolia
 
 ## 三、Upstash / Supabase 相关说明
 
-- **Upstash Redis**：  
-  - 用于 `/api/faucet` 的限流（按 IP + 地址限制调用频率）。  
+- **Upstash Redis**：
+  - 用于 `/api/faucet` 的限流（按 IP + 地址限制调用频率）。
   - 本地开发时，如果不想配置 Upstash，可以临时在代码中关闭限流逻辑，或在 `.env(.local)` 中留空相关字段并根据实际报错进行调整。
 
-- **Supabase**：  
-  - 当前版本的 `/api/orders` 使用的是进程内内存数组作为订单池，并未真正接入 Supabase。  
+- **Supabase**：
+  - 当前版本的 `/api/orders` 使用的是进程内内存数组作为订单池，并未真正接入 Supabase。
   - `.env(.local)` 中的 `SUPABASE_URL` / `SUPABASE_ANON_KEY` 主要是为未来扩展预留，可以留空，不影响当前 Demo 跑通。
 
 ---
@@ -214,4 +210,3 @@ pnpm deploy:sepolia
 
 - **Q：如何快速确认当前前端连接的是本地链还是 Sepolia？**  
   A：可以通过浏览器控制台 / Network 面板观察 RPC 请求的目标 URL；或者在 `.env.local` / `.env` 中查看 `NEXT_PUBLIC_CHAIN_ID` 与 `NEXT_PUBLIC_RPC_URL` 的当前值。一般规则是：存在 `.env.local` 时优先使用其配置。
-

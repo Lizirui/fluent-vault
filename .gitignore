@@ -17,6 +17,7 @@ yarn-debug.log*
 yarn-error.log*
 .idea/
 .vscode/
+.cursor/
 
 # Environment files (keep .env.example)
 .env
